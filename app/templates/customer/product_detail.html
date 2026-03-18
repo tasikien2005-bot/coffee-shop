@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+{% set packaging_descriptions = {
+    'Cà phê hạt nguyên chất': 'Cà phê hạt nguyên chất, phù hợp xay theo khẩu vị.',
+    'Cà phê bột pha phin': 'Cà phê xay sẵn cho pha phin, tiện dùng.',
+    'Cà phê hòa tan': 'Cà phê hòa tan đóng gói, pha nhanh với nước nóng.',
+    'Cà phê cao cấp': 'Dòng cao cấp, chọn lọc hạt và rang xay kỹ.',
+    'Combo tiết kiệm': 'Combo nhiều sản phẩm, giá tốt hơn.'
+} %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb" style="font-size: 0.9rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('products.index') }}"><i class="bi bi-shop"></i> Sản phẩm</a></li>
+        <li class="breadcrumb-item active">{{ product.name }}</li>
+    </ol>
+</nav>
+
+<div class="row g-5">
+    <div class="col-lg-6">
+        <div class="card" style="border-radius: var(--radius-xl); overflow: hidden; background: #FFF8F0;">
+            {% if product.display_image_url %}
+                <img src="{{ url_for('static', filename=product.display_image_url) }}" class="img-fluid" alt="{{ product.name }}" style="width: 100%; height: 450px; object-fit: {{ 'contain' if product.category and product.category.name in packaged_categories else 'cover' }}; padding: {{ '1rem' if product.category and product.category.name in packaged_categories else '0' }};">
+            {% elif product.category and product.category.name in packaged_categories %}
+                <img src="{{ url_for('static', filename='images/coffee-boxes/coffee-box-default.svg') }}" class="img-fluid" alt="{{ product.name }}" style="width: 100%; height: 450px; object-fit: contain; padding: 1rem;">
+            {% else %}
+                <div class="product-img-placeholder" style="height: 450px; border-radius: 0;">
+                    <i class="bi bi-cup-hot" style="font-size: 5rem;"></i>
+                </div>
+            {% endif %}
+        </div>
+        {% if product.category and product.category.name in packaged_categories and (not product.image_url or (product.display_image_url and 'coffee-boxes' in product.display_image_url)) %}
+        <p class="small text-muted mt-2 mb-0"><i class="bi bi-image"></i> Ảnh minh họa. Quản trị viên có thể tải ảnh thật tại <strong>Quản trị → Sản phẩm → Chỉnh sửa</strong>.</p>
+        {% endif %}
+    </div>
+    <div class="col-lg-6">
+        <span class="badge bg-primary mb-3" style="font-size: 0.85rem;">{{ product.category.name }}</span>
+        {% if product.category and product.category.name in packaging_descriptions %}
+        <p class="text-muted small mb-2"><i class="bi bi-box-seam"></i> {{ packaging_descriptions[product.category.name] }}</p>
+        {% endif %}
+        <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem;">{{ product.name }}</h1>
+        
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <span class="product-price" style="font-size: 2rem;">{{ product.format_price() }}</span>
+            {% if product.is_in_stock() %}
+                <span class="badge bg-success" style="font-size: 0.85rem;">
+                    <i class="bi bi-check-circle"></i> Còn {{ product.stock }} sản phẩm
+                </span>
+            {% else %}
+                <span class="badge bg-danger" style="font-size: 0.85rem;">
+                    <i class="bi bi-x-circle"></i> Hết hàng
+                </span>
+            {% endif %}
+        </div>
+        
+        {% if product.description %}
+            <div class="mb-4">
+                <h5 style="font-size: 1rem; color: var(--text-dark);">Mô tả sản phẩm</h5>
+                <p style="color: var(--text-muted); line-height: 1.8;">{{ product.description }}</p>
+            </div>
+        {% endif %}
+        
+        <hr style="border-color: #E8E0D8;">
+        
+        {% if product.is_in_stock() %}
+            {% if current_user.is_authenticated %}
+                <form method="POST" action="{{ url_for('products.add_to_cart', product_id=product.id) }}" class="mb-4">
+                    <div class="row align-items-end g-3 mb-4">
+                        <div class="col-auto">
+                            <label for="quantity" class="form-label">Số lượng</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" max="{{ product.stock }}" required style="width: 100px;">
+                        </div>
+                        <div class="col">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-cart-plus"></i> Thêm vào giỏ hàng
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            {% else %}
+                <div class="alert alert-info mb-4" role="alert">
+                    <i class="bi bi-info-circle"></i> <strong>Vui lòng đăng nhập</strong> để thêm sản phẩm vào giỏ hàng.
+                    <div class="mt-3">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                            <i class="bi bi-box-arrow-in-right"></i> Đăng nhập
+                        </a>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-person-plus"></i> Đăng ký
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <button class="btn btn-secondary btn-lg mb-4" disabled>
+                <i class="bi bi-x-circle"></i> Hết hàng
+            </button>
+        {% endif %}
+        
+        <a href="{{ url_for('products.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại danh sách
+        </a>
+    </div>
+</div>
+{% endblock %}

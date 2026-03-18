@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Trang chủ{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-blog {
+        background: linear-gradient(135deg, #3E2723, #6F4E37);
+        color: #fff;
+        border-radius: 16px;
+        padding: 2.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-blog-title {
+        font-size: 2.4rem;
+        font-weight: 700;
+        color: #FFF7EC;
+        text-shadow: 0 3px 10px rgba(0, 0, 0, 0.55);
+        letter-spacing: 0.02em;
+    }
+    .hero-blog::after {
+        content: "";
+        position: absolute;
+        right: -60px;
+        top: -60px;
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+    }
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+    .blog-card {
+        border: 1px solid #eee;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        background: #fff;
+    }
+    .blog-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    }
+    .blog-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: #f4ede6;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #6F4E37;
+        font-size: 1.3rem;
+    }
+    .blog-meta {
+        color: #888;
+        font-size: 0.85rem;
+    }
+    .blog-category {
+        background: #f6f0e8;
+        color: #6F4E37;
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+    .sidebar-card {
+        border: 1px solid #eee;
+        border-radius: 12px;
+        background: #fff;
+    }
+    .newsletter-input {
+        border-radius: 8px;
+        border: 1px solid #e1d7cc;
+    }
+    .product-mini-card {
+        border: 1px solid #eee;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fff;
+    }
+    .product-mini-card img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero-blog mb-4">
+    <div class="row align-items-center">
+        <div class="col-lg-7">
+            <span class="hero-badge mb-3">
+                <i class="bi bi-journal-text"></i> Blog Brewly
+            </span>
+            <h1 class="mb-3 hero-blog-title">
+                Hành Trình Cà Phê &amp; Những Câu Chuyện Đáng Nhớ
+            </h1>
+            <p class="mb-4" style="color: rgba(255,255,255,0.85);">
+                Từ ly cà phê đầu tiên buổi sáng, những câu chuyện về hạt rang, 
+                đến bí quyết pha chế mà mình đúc kết được. Đây là nơi chia sẻ về cà phê, 
+                không cầu kỳ nhưng thật lòng.
+            </p>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ url_for('products.index') }}" class="btn btn-light">
+                    <i class="bi bi-shop"></i> Xem sản phẩm
+                </a>
+                <a href="{{ url_for('dashboard.about') }}" class="btn btn-outline-light">
+                    <i class="bi bi-info-circle"></i> Về chúng tôi
+                </a>
+                {% if show_admin_link %}
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-light">
+                    <i class="bi bi-speedometer2"></i> Vào Dashboard
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-lg-5 mt-4 mt-lg-0">
+            {% if posts %}
+            <div class="blog-card p-4" style="background: rgba(255,255,255,0.95);">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="blog-icon">
+                        <i class="bi {{ posts[0].icon }}"></i>
+                    </span>
+                    <div>
+                        <span class="blog-category">{{ posts[0].category }}</span>
+                        <div class="blog-meta">{{ posts[0].date }} • {{ posts[0].read_time }}</div>
+                    </div>
+                </div>
+                <h5 class="mb-2">{{ posts[0].title }}</h5>
+                <p class="text-muted mb-3">{{ posts[0].excerpt }}</p>
+                <a href="{{ url_for('dashboard.blog_detail', slug=posts[0].slug) }}" class="btn btn-sm btn-primary">
+                    Đọc bài viết
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Main Posts -->
+    <div class="col-lg-8">
+        <h2 class="section-title"><i class="bi bi-journal-text"></i> Bài viết mới nhất</h2>
+        <div class="row g-3">
+            {% for post in posts[1:5] %}
+            <div class="col-md-6">
+                <div class="blog-card p-3 h-100">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <span class="blog-icon">
+                            <i class="bi {{ post.icon }}"></i>
+                        </span>
+                        <div>
+                            <span class="blog-category">{{ post.category }}</span>
+                            <div class="blog-meta">{{ post.date }} • {{ post.read_time }}</div>
+                        </div>
+                    </div>
+                    <h5 class="mb-2">{{ post.title }}</h5>
+                    <p class="text-muted mb-3">{{ post.excerpt }}</p>
+                    <a href="{{ url_for('dashboard.blog_detail', slug=post.slug) }}" class="btn btn-sm btn-outline-primary">Đọc tiếp</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-right"></i> Xem tất cả bài viết
+            </a>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <div class="sidebar-card p-3 mb-3">
+            <h5 class="mb-3"><i class="bi bi-tags"></i> Chuyên mục</h5>
+            <div class="d-flex flex-wrap gap-2">
+                <span class="blog-category">Hạt cà phê</span>
+                <span class="blog-category">Pha chế</span>
+                <span class="blog-category">Sức khỏe</span>
+                <span class="blog-category">Câu chuyện</span>
+                <span class="blog-category">Hướng dẫn</span>
+                <span class="blog-category">Sản phẩm</span>
+            </div>
+        </div>
+
+        <div class="sidebar-card p-3 mb-3">
+            <h5 class="mb-3"><i class="bi bi-fire"></i> Bài nổi bật</h5>
+            {% for post in posts[:3] %}
+            <a class="d-flex align-items-start gap-2 mb-3 text-decoration-none" href="{{ url_for('dashboard.blog_detail', slug=post.slug) }}">
+                <div class="blog-icon" style="width: 40px; height: 40px;">
+                    <i class="bi {{ post.icon }}" style="font-size: 1rem;"></i>
+                </div>
+                <div>
+                    <div class="fw-semibold text-dark">{{ post.title }}</div>
+                    <div class="blog-meta">{{ post.read_time }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+
+        <div class="sidebar-card p-3">
+            <h5 class="mb-3"><i class="bi bi-envelope"></i> Nhận bản tin</h5>
+            <p class="text-muted">Cập nhật bài viết mới và ưu đãi mỗi tuần.</p>
+            <div class="input-group">
+                <input type="email" class="form-control newsletter-input" placeholder="Email của bạn">
+                <button class="btn btn-primary" type="button">Đăng ký</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="my-5" style="border-color: #E8E0D8;">
+
+<div>
+    <h2 class="section-title"><i class="bi bi-star"></i> Sản phẩm nổi bật</h2>
+    {% if latest_products %}
+    <div class="row g-3">
+        {% for product in latest_products %}
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="product-mini-card">
+                {% if product.display_image_url %}
+                    <img src="{{ url_for('static', filename=product.display_image_url) }}" alt="{{ product.name }}" style="object-fit: contain; background: #FFF8F0;">
+                {% elif product.category and product.category.name in packaged_categories %}
+                    <img src="{{ url_for('static', filename='images/coffee-boxes/coffee-box-default.svg') }}" alt="{{ product.name }}" style="object-fit: contain; background: #FFF8F0;">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center" style="height: 150px; background: #faf6ef;">
+                        <i class="bi bi-cup-hot" style="font-size: 2rem; color: #6F4E37;"></i>
+                    </div>
+                {% endif %}
+                <div class="p-2">
+                    <div class="fw-semibold text-truncate">{{ product.name }}</div>
+                    <div class="product-price">{{ product.format_price() }}</div>
+                    <a href="{{ url_for('products.detail', id=product.id) }}" class="btn btn-sm btn-outline-primary w-100 mt-2">
+                        Xem chi tiết
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-cup-hot"></i>
+        <h4>Chưa có sản phẩm</h4>
+        <p class="text-muted">Hãy thêm sản phẩm để hiển thị tại đây.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

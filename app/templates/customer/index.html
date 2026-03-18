@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Sản phẩm{% endblock %}
+
+{% block content %}
+{% set packaging_descriptions = {
+    'Cà phê hạt nguyên chất': 'Cà phê hạt nguyên chất, phù hợp xay theo khẩu vị.',
+    'Cà phê bột pha phin': 'Cà phê xay sẵn cho pha phin, tiện dùng.',
+    'Cà phê hòa tan': 'Cà phê hòa tan đóng gói, pha nhanh với nước nóng.',
+    'Cà phê cao cấp': 'Dòng cao cấp, chọn lọc hạt và rang xay kỹ.',
+    'Combo tiết kiệm': 'Combo nhiều sản phẩm, giá tốt hơn.'
+} %}
+<div class="row mb-4">
+    <!-- Sidebar Filter -->
+    <div class="col-lg-3 mb-4">
+        <div class="card filter-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-funnel"></i> Bộ lọc</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('products.index') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Tìm kiếm</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="border: 2px solid #E8E0D8; border-right: none; background: #fff;">
+                                <i class="bi bi-search text-muted"></i>
+                            </span>
+                            <input type="text" class="form-control" name="search" value="{{ search }}" placeholder="Tên sản phẩm..." style="border-left: none;">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Danh mục</label>
+                        <select class="form-select" name="category">
+                            <option value="">Tất cả</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}" {% if category_id == cat.id %}selected{% endif %}>
+                                    {{ cat.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mb-2">
+                        <i class="bi bi-search"></i> Tìm kiếm
+                    </button>
+                    <a href="{{ url_for('products.index') }}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-clockwise"></i> Reset
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="col-lg-9">
+        <h2 class="section-title"><i class="bi bi-shop"></i> Sản phẩm</h2>
+        {% if category_id %}
+            {% for cat in categories %}
+                {% if cat.id == category_id and cat.name in packaging_descriptions %}
+                <p class="text-muted mb-3">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>{{ cat.name }}</strong> — {{ packaging_descriptions[cat.name] }}
+                </p>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        {% if products %}
+            <div class="row g-4">
+                {% for product in products %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card product-card h-100">
+                            <div class="card-img-wrap">
+                                {% if product.display_image_url %}
+                                    <img src="{{ url_for('static', filename=product.display_image_url) }}" class="card-img-top product-img" alt="{{ product.name }}">
+                                {% elif product.category and product.category.name in packaged_categories %}
+                                    <img src="{{ url_for('static', filename='images/coffee-boxes/coffee-box-default.svg') }}" class="card-img-top product-img" alt="{{ product.name }}">
+                                {% else %}
+                                    <div class="product-img-placeholder">
+                                        <i class="bi bi-cup-hot"></i>
+                                    </div>
+                                {% endif %}
+                                {% if product.category and product.category.name in packaged_categories and (not product.image_url or (product.display_image_url and 'coffee-boxes' in product.display_image_url)) %}
+                                <div class="img-hint">Ảnh minh họa — tải ảnh thật tại <strong>Quản trị → Sản phẩm → Chỉnh sửa</strong></div>
+                                {% endif %}
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">{{ product.name }}</h5>
+                                {% if product.category and product.category.name in packaged_categories %}
+                                <p class="small text-muted mb-1"><i class="bi bi-box-seam"></i> Sản phẩm đóng gói sẵn, tiện bảo quản.</p>
+                                {% endif %}
+                                <p class="card-text">{{ product.description[:80] if product.description else '' }}...</p>
+                                <div class="mt-auto">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <span class="product-price">{{ product.format_price() }}</span>
+                                        {% if product.stock > 0 %}
+                                            <span class="badge bg-success">Còn hàng</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Hết hàng</span>
+                                        {% endif %}
+                                    </div>
+                                    <a href="{{ url_for('products.detail', id=product.id) }}" class="btn btn-primary w-100">
+                                        <i class="bi bi-eye"></i> Xem chi tiết
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if pagination.pages > 1 %}
+                <nav aria-label="Page navigation" class="mt-5">
+                    <ul class="pagination justify-content-center">
+                        {% if pagination.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('products.index', page=pagination.prev_num, search=search, category=category_id) }}">
+                                    <i class="bi bi-chevron-left"></i> Trước
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('products.index', page=page_num, search=search, category=category_id) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        {% if pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('products.index', page=pagination.next_num, search=search, category=category_id) }}">
+                                    Sau <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-search"></i>
+                <h4>Không tìm thấy sản phẩm nào</h4>
+                <p class="text-muted">Thử tìm kiếm với từ khóa khác</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

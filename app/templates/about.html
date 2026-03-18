@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Giới thiệu{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <h2 class="section-title"><i class="bi bi-cup-hot"></i> Về Brewly</h2>
+        <p class="text-muted mb-4">
+            Brewly bắt đầu từ ý tưởng đơn giản: tạo một nơi mua cà phê online dễ dàng, minh bạch về nguồn gốc và giá cả.
+            Từ những ly cà phê phin truyền thống đến các loại hòa tan tiện lợi, chúng mình muốn mang đến sự lựa chọn 
+            đa dạng cho mọi người - dù bạn là dân "nghiền" hay chỉ uống thỉnh thoảng.
+        </p>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-award"></i> Chất lượng</h5>
+                        <p class="card-text text-muted">
+                            Mỗi sản phẩm đều có mô tả chi tiết về vị, hương, cách pha. Chúng mình không bán hàng "ảo" - mô tả như thế nào thì vị như vậy.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-truck"></i> Giao hàng</h5>
+                        <p class="card-text text-muted">
+                            Hỗ trợ COD (trả tiền khi nhận) hoặc chuyển khoản trước qua QR. Đơn hàng được xác nhận và xử lý trong 24h.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-shield-check"></i> An tâm</h5>
+                        <p class="card-text text-muted">
+                            Website bảo mật thông tin, thanh toán rõ ràng. Nếu có vấn đề gì, liên hệ qua form hoặc email để được hỗ trợ.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body p-4">
+                <h5 class="card-title"><i class="bi bi-lightbulb"></i> Tại sao chọn Brewly?</h5>
+                <p class="text-muted mb-2">
+                    Chúng mình không phải chuỗi lớn, không có vốn marketing khủng. Nhưng mình có những điều này:
+                </p>
+                <ul class="text-muted mb-0">
+                    <li>Mô tả sản phẩm thật, không phóng đại. Đắng thì nói đắng, ngọt thì nói ngọt.</li>
+                    <li>Giá rõ ràng, không có phí ẩn. Phí ship (nếu có) sẽ hiện ngay khi checkout.</li>
+                    <li>Hỗ trợ COD và chuyển khoản, tùy bạn chọn.</li>
+                    <li>Website dễ dùng, mua hàng không rườm rà. Từ chọn sản phẩm đến thanh toán chỉ 3-4 bước.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-geo-alt"></i> Khu vực phục vụ</h5>
+                        <p class="text-muted mb-3">
+                            Hiện tại Brewly phục vụ khu vực <strong>Cần Thơ</strong> và các tỉnh lân cận ĐBSCL.
+                            Ship hỏa tốc trong ngày nếu đặt trước 15h (trong nội thành).
+                        </p>
+                        <p class="text-muted mb-1"><strong>Phí ship:</strong></p>
+                        <p class="text-muted mb-0" style="font-size: 0.9rem;">
+                            • Nội thành Cần Thơ: 15.000đ<br>
+                            • Ngoại thành (bán kính 20km): 25.000đ<br>
+                            • Các tỉnh khác: Liên hệ
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-chat-dots"></i> Liên hệ & hỗ trợ</h5>
+                        <p class="text-muted mb-3">
+                            Có thắc mắc về sản phẩm, đơn hàng, hoặc muốn tư vấn loại cà phê nào hợp khẩu vị? 
+                            Inbox hoặc email cho mình nhé.
+                        </p>
+                        <p class="text-muted mb-1"><strong>Hỗ trợ:</strong> 8h - 22h hàng ngày</p>
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-envelope"></i> Email: support@brewly.click<br>
+                            <i class="bi bi-facebook"></i> Facebook: fb.com/brewlycoffee
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

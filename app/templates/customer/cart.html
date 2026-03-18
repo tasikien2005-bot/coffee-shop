@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Giỏ hàng{% endblock %}
+
+{% block content %}
+<h2 class="section-title"><i class="bi bi-cart3"></i> Giỏ hàng của bạn</h2>
+
+{% if cart_items %}
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Sản phẩm</th>
+                                    <th>Giá</th>
+                                    <th>Số lượng</th>
+                                    <th>Thành tiền</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ item.product.name }}</strong>
+                                            {% if not item.product.is_in_stock() or item.quantity > item.product.stock %}
+                                                <br><span class="badge bg-danger">Không đủ hàng</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="color: var(--text-muted);">{{ item.product.format_price() }}</td>
+                                        <td>
+                                            <form method="POST" action="{{ url_for('products.update_cart') }}" class="d-inline">
+                                                <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                                                <div class="input-group cart-quantity-input">
+                                                    <input type="number" class="form-control form-control-sm" name="quantity" value="{{ item.quantity }}" min="0" max="{{ item.product.stock }}" required>
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-arrow-clockwise"></i>
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </td>
+                                        <td><strong class="product-price" style="font-size: 1rem;">{{ item.subtotal|format_currency }}</strong></td>
+                                        <td>
+                                            <form method="POST" action="{{ url_for('products.remove_from_cart', product_id=item.product.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                    <i class="bi bi-trash3"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card" style="border: 2px solid var(--coffee-cream);">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--coffee-milk), var(--coffee-white));">
+                    <h5 class="mb-0" style="color: var(--coffee-dark);"><i class="bi bi-bag-check"></i> Tóm tắt đơn hàng</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Tạm tính:</span>
+                        <strong class="product-price" style="font-size: 1.3rem;">{{ total|format_currency }}</strong>
+                    </div>
+                    <hr style="border-color: #E8E0D8;">
+                    <form method="POST" action="{{ url_for('orders.create') }}">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-geo-alt"></i> Địa chỉ giao hàng
+                            </label>
+                            
+                            <div class="row g-2 mb-2">
+                                <div class="col-12">
+                                    <input type="text" class="form-control" id="street_address" name="street_address" placeholder="Số nhà, tên đường" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-6">
+                                    <select class="form-select" id="ward" name="ward" required>
+                                        <option value="">-- Chọn Phường/Xã --</option>
+                                        <option value="An Hòa">Phường An Hòa</option>
+                                        <option value="An Khánh">Phường An Khánh</option>
+                                        <option value="An Nghiệp">Phường An Nghiệp</option>
+                                        <option value="An Phú">Phường An Phú</option>
+                                        <option value="Cái Khế">Phường Cái Khế</option>
+                                        <option value="Hưng Lợi">Phường Hưng Lợi</option>
+                                        <option value="Thới Bình">Phường Thới Bình</option>
+                                        <option value="Xuân Khánh">Phường Xuân Khánh</option>
+                                        <option value="Trà An">Xã Trà An</option>
+                                        <option value="Trà Nóc">Phường Trà Nóc</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <select class="form-select" id="district" name="district" required>
+                                        <option value="">-- Chọn Quận/Huyện --</option>
+                                        <option value="Ninh Kiều">Quận Ninh Kiều</option>
+                                        <option value="Cái Răng">Quận Cái Răng</option>
+                                        <option value="Bình Thủy">Quận Bình Thủy</option>
+                                        <option value="Ô Môn">Quận Ô Môn</option>
+                                        <option value="Thốt Nốt">Quận Thốt Nốt</option>
+                                        <option value="Phong Điền">Huyện Phong Điền</option>
+                                        <option value="Cờ Đỏ">Huyện Cờ Đỏ</option>
+                                        <option value="Vĩnh Thạnh">Huyện Vĩnh Thạnh</option>
+                                        <option value="Thới Lai">Huyện Thới Lai</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <select class="form-select" id="city" name="city" required>
+                                        <option value="Cần Thơ" selected>Thành phố Cần Thơ</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <input type="hidden" id="shipping_address" name="shipping_address">
+                        </div>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">
+                                <i class="bi bi-chat-dots"></i> Ghi chú
+                            </label>
+                            <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Ghi chú cho đơn hàng..."></textarea>
+                        </div>
+
+                        <!-- Phương thức thanh toán -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-credit-card"></i> Phương thức thanh toán
+                            </label>
+                            
+                            <div class="payment-methods">
+                                <div class="form-check payment-option py-2 px-3 mb-1 rounded" style="cursor: pointer;">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="pay_cod" value="cod" checked>
+                                    <label class="form-check-label w-100 d-flex align-items-center" for="pay_cod" style="cursor: pointer;">
+                                        <i class="bi bi-cash-coin me-2" style="font-size: 1.1rem;"></i>
+                                        <strong style="font-size: 0.95rem;">COD - Thanh toán khi nhận hàng</strong>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check payment-option py-2 px-3 mb-1 rounded" style="cursor: pointer;">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="pay_bank" value="bank_transfer">
+                                    <label class="form-check-label w-100 d-flex align-items-center" for="pay_bank" style="cursor: pointer;">
+                                        <i class="bi bi-bank me-2" style="font-size: 1.1rem;"></i>
+                                        <strong style="font-size: 0.95rem;">Chuyển khoản ngân hàng</strong>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check payment-option py-2 px-3 mb-1 rounded" style="cursor: pointer;">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="pay_vnpay" value="vnpay">
+                                    <label class="form-check-label w-100 d-flex align-items-center" for="pay_vnpay" style="cursor: pointer;">
+                                        <i class="bi bi-qr-code me-2" style="font-size: 1.1rem;"></i>
+                                        <strong style="font-size: 0.95rem;">VNPay</strong>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 btn-lg">
+                            <i class="bi bi-check-circle"></i> Đặt hàng
+                        </button>
+                    </form>
+                    <a href="{{ url_for('products.index') }}" class="btn btn-outline-secondary w-100 mt-3">
+                        <i class="bi bi-arrow-left"></i> Tiếp tục mua sắm
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <i class="bi bi-cart-x"></i>
+        <h4>Giỏ hàng đang trống</h4>
+        <p class="text-muted">Chưa có gì trong giỏ. Xem sản phẩm để thêm vào nhé</p>
+        <a href="{{ url_for('products.index') }}" class="btn btn-primary btn-lg mt-2">
+            <i class="bi bi-shop"></i> Xem sản phẩm
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cart-quantity-input {
+        width: 150px;
+        min-width: 150px;
+    }
+    .cart-quantity-input .form-control {
+        min-width: 4rem;
+        width: 5rem;
+        text-align: center;
+    }
+    .payment-methods {
+        border: 1px solid #e8e0d8;
+        border-radius: 8px;
+        padding: 0.5rem;
+        background: #fafafa;
+    }
+    .payment-option {
+        transition: all 0.2s ease;
+        border: none !important;
+        background: transparent;
+        opacity: 0.7;
+    }
+    .payment-option:hover {
+        opacity: 0.9;
+        background-color: rgba(111, 78, 55, 0.05);
+    }
+    .payment-option:has(input:checked) {
+        opacity: 1 !important;
+        background: linear-gradient(135deg, #fff5eb 0%, #fffbf5 100%) !important;
+        border-left: 4px solid var(--coffee-brown, #6F4E37) !important;
+        box-shadow: 0 2px 8px rgba(111, 78, 55, 0.15);
+    }
+    .payment-option:has(input:checked) strong {
+        color: var(--coffee-dark, #2C1810);
+    }
+    .payment-option:has(input:checked) i {
+        color: var(--coffee-brown, #6F4E37);
+    }
+    .payment-option .form-check-input {
+        margin-top: 0.15rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form[method="POST"]');
+    const streetInput = document.getElementById('street_address');
+    const wardSelect = document.getElementById('ward');
+    const districtSelect = document.getElementById('district');
+    const citySelect = document.getElementById('city');
+    const hiddenAddress = document.getElementById('shipping_address');
+    
+    if (!form || !streetInput || !wardSelect || !districtSelect || !citySelect || !hiddenAddress) {
+        return;
+    }
+    
+    // Hàm ghép địa chỉ
+    function updateAddress() {
+        const parts = [];
+        if (streetInput.value) parts.push(streetInput.value);
+        if (wardSelect.value) parts.push(wardSelect.options[wardSelect.selectedIndex].text);
+        if (districtSelect.value) parts.push(districtSelect.options[districtSelect.selectedIndex].text);
+        if (citySelect.value) parts.push(citySelect.options[citySelect.selectedIndex].text);
+        
+        hiddenAddress.value = parts.join(', ');
+    }
+    
+    // Lắng nghe sự thay đổi
+    streetInput.addEventListener('input', updateAddress);
+    wardSelect.addEventListener('change', updateAddress);
+    districtSelect.addEventListener('change', updateAddress);
+    citySelect.addEventListener('change', updateAddress);
+    
+    // Cập nhật khi submit
+    form.addEventListener('submit', function(e) {
+        updateAddress();
+        if (!hiddenAddress.value) {
+            e.preventDefault();
+            alert('Vui lòng nhập đầy đủ địa chỉ giao hàng!');
+        }
+    });
+});
+</script>
+{% endblock %}

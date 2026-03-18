@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý danh mục{% endblock %}
+
+{% block content %}
+<h2 class="section-title"><i class="bi bi-tags"></i> Quản lý danh mục</h2>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Danh sách danh mục</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if categories %}
+                    <ul class="list-group list-group-flush">
+                        {% for category in categories %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong style="color: var(--coffee-dark);">{{ category.name }}</strong>
+                                    {% if category.description %}
+                                        <br><small class="text-muted">{{ category.description }}</small>
+                                    {% endif %}
+                                </div>
+                                <span class="badge bg-primary">{{ category.products|length }} sản phẩm</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-tags"></i>
+                        <h4>Chưa có danh mục nào</h4>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-5">
+        <div class="card" style="border: 2px solid var(--coffee-cream);">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--coffee-milk), var(--coffee-white));">
+                <h5 class="mb-0" style="color: var(--coffee-dark);"><i class="bi bi-plus-circle"></i> Thêm danh mục</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.create_category') }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Tên danh mục <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" placeholder="Nhập tên danh mục" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Mô tả</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Mô tả danh mục..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-plus-circle"></i> Thêm danh mục
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Không tìm thấy{% endblock %}
+
+{% block content %}
+<div class="error-page text-center">
+    <h1>404</h1>
+    <h2>Trang không tìm thấy</h2>
+    <p>Trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.</p>
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary btn-lg mt-3">
+        <i class="bi bi-house"></i> Về trang chủ
+    </a>
+</div>
+{% endblock %}

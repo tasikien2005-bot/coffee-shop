@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block title %}Thanh toán đơn hàng #{{ order.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-card {
+        border: 2px solid var(--coffee-cream, #E8E0D8);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .payment-card .card-header {
+        background: linear-gradient(135deg, var(--coffee-primary, #6F4E37), var(--coffee-dark, #3E2723));
+        color: #fff;
+        padding: 1.2rem;
+    }
+    .bank-info-table td {
+        padding: 0.6rem 0;
+        border-bottom: 1px dashed #e0d6cc;
+    }
+    .bank-info-table td:first-child {
+        color: #888;
+        width: 40%;
+    }
+    .bank-info-table td:last-child {
+        font-weight: 600;
+        color: var(--coffee-dark, #3E2723);
+    }
+    .copy-btn {
+        cursor: pointer;
+        border: none;
+        background: none;
+        color: var(--coffee-primary, #6F4E37);
+        font-size: 0.85rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+    .copy-btn:hover {
+        background: var(--coffee-cream, #E8E0D8);
+    }
+    .qr-placeholder {
+        width: 200px;
+        height: 200px;
+        border: 2px dashed #ccc;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        background: #fafafa;
+    }
+    .payment-timer {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--coffee-primary, #6F4E37);
+    }
+    .method-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .method-momo { background: #fff0f5; color: #d82d8b; }
+    .method-zalopay { background: #e8f8f5; color: #008fe5; }
+    .method-vnpay { background: #fff8e1; color: #e67e22; }
+    .method-bank { background: #e8f0fe; color: #1a73e8; }
+    .step-number {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--coffee-primary, #6F4E37);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb" style="font-size: 0.9rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('orders.index') }}"><i class="bi bi-list-check"></i> Đơn hàng</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('orders.detail', id=order.id) }}">Đơn #{{ order.id }}</a></li>
+        <li class="breadcrumb-item active">Thanh toán</li>
+    </ol>
+</nav>
+
+<div class="row g-4">
+    <!-- Payment Info -->
+    <div class="col-lg-8">
+        <div class="payment-card card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-check"></i> Thanh toán đơn hàng #{{ order.id }}
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <!-- Payment Method Display -->
+                <div class="text-center mb-4">
+                    <p class="text-muted mb-2">Phương thức thanh toán</p>
+                    {% if order.payment_method == 'momo' %}
+                        <span class="method-badge method-momo">
+                            <i class="bi bi-phone"></i> Ví MoMo
+                        </span>
+                    {% elif order.payment_method == 'zalopay' %}
+                        <span class="method-badge method-zalopay">
+                            <i class="bi bi-wallet2"></i> ZaloPay
+                        </span>
+                    {% elif order.payment_method == 'vnpay' %}
+                        <span class="method-badge method-vnpay">
+                            <i class="bi bi-qr-code"></i> VNPay
+                        </span>
+                    {% else %}
+                        <span class="method-badge method-bank">
+                            <i class="bi bi-bank"></i> Chuyển khoản ngân hàng
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="text-center mb-4">
+                    <p class="text-muted mb-1">Số tiền cần thanh toán</p>
+                    <h2 class="product-price mb-0" style="font-size: 2rem; color: var(--coffee-primary, #6F4E37);">
+                        {{ order.format_total() }}
+                    </h2>
+                </div>
+
+                <hr style="border-color: #E8E0D8;">
+
+                {% if order.payment_method == 'bank_transfer' %}
+                <!-- Bank Transfer Info -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-bank"></i> Thông tin chuyển khoản</h6>
+                    <div class="bg-light p-3 rounded">
+                        <table class="bank-info-table w-100 mb-0">
+                            <tr>
+                                <td>Ngân hàng</td>
+                                <td>{{ bank_info.bank_name }}
+                                    <button class="copy-btn" onclick="copyText('{{ bank_info.bank_name }}')" title="Sao chép">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Số tài khoản</td>
+                                <td>{{ bank_info.account_number }}
+                                    <button class="copy-btn" onclick="copyText('{{ bank_info.account_number }}')" title="Sao chép">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Chủ tài khoản</td>
+                                <td>{{ bank_info.account_holder }}
+                                    <button class="copy-btn" onclick="copyText('{{ bank_info.account_holder }}')" title="Sao chép">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% if bank_info.branch %}
+                            <tr>
+                                <td>Chi nhánh</td>
+                                <td>{{ bank_info.branch }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td>Nội dung CK</td>
+                                <td>
+                                    <span class="text-danger fw-bold">{{ bank_info.transfer_content }}</span>
+                                    <button class="copy-btn" onclick="copyText('{{ bank_info.transfer_content }}')" title="Sao chép">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- QR Code -->
+                <div class="text-center mb-4">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-qr-code-scan"></i> Quét mã QR để thanh toán</h6>
+                    <div class="mb-2">
+                        <img src="{{ url_for('static', filename='images/Payment.png') }}" alt="QR thanh toán" style="max-width: 250px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1);">
+                    </div>
+                    <small class="text-muted">Quét mã bằng app ngân hàng để tự động điền thông tin</small>
+                </div>
+                {% endif %}
+
+                {% if order.payment_method == 'momo' %}
+                <!-- MoMo -->
+                <div class="text-center mb-4">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-phone"></i> Thanh toán qua MoMo</h6>
+                    <div class="mb-3">
+                        <img src="{{ url_for('static', filename='images/Payment.png') }}" alt="QR Thanh toán" style="max-width: 220px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1);">
+                    </div>
+                    <div class="bg-light p-3 rounded text-start">
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="step-number me-2">1</span>
+                            <span>Mở ứng dụng <strong>MoMo</strong> trên điện thoại</span>
+                        </div>
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="step-number me-2">2</span>
+                            <span>Chọn <strong>"Quét mã QR"</strong> và quét mã bên trên</span>
+                        </div>
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="step-number me-2">3</span>
+                            <span>Xác nhận thanh toán số tiền <strong>{{ order.format_total() }}</strong></span>
+                        </div>
+                        <div class="d-flex align-items-start">
+                            <span class="step-number me-2">4</span>
+                            <span>Nhấn <strong>"Tôi đã thanh toán"</strong> bên dưới sau khi hoàn tất</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if order.payment_method == 'zalopay' %}
+                <!-- ZaloPay -->
+                <div class="text-center mb-4">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-wallet2"></i> Thanh toán qua ZaloPay</h6>
+                    <div class="mb-3">
+                        <img src="{{ url_for('static', filename='images/Payment.png') }}" alt="QR Thanh toán" style="max-width: 220px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1);">
+                    </div>
+                    <div class="bg-light p-3 rounded text-start">
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="step-number me-2">1</span>
+                            <span>Mở ứng dụng <strong>ZaloPay</strong> trên điện thoại</span>
+                        </div>
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="step-number me-2">2</span>
+                            <span>Chọn <strong>"Quét mã"</strong> và quét mã QR bên trên</span>
+                        </div>
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="step-number me-2">3</span>
+                            <span>Xác nhận thanh toán số tiền <strong>{{ order.format_total() }}</strong></span>
+                        </div>
+                        <div class="d-flex align-items-start">
+                            <span class="step-number me-2">4</span>
+                            <span>Nhấn <strong>"Tôi đã thanh toán"</strong> bên dưới sau khi hoàn tất</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if order.payment_method == 'vnpay' %}
+                <!-- VNPay -->
+                <div class="text-center mb-4">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-qr-code"></i> Thanh toán qua VNPay</h6>
+                    <div class="mb-3">
+                        <img src="{{ url_for('static', filename='images/Payment.png') }}" alt="QR Thanh toán" style="max-width: 220px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1);">
+                    </div>
+                    <div class="bg-light p-3 rounded text-start">
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="step-number me-2">1</span>
+                            <span>Mở ứng dụng ngân hàng hoặc ví <strong>VNPay</strong></span>
+                        </div>
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="step-number me-2">2</span>
+                            <span>Chọn <strong>"Quét mã QR"</strong> và quét mã bên trên</span>
+                        </div>
+                        <div class="d-flex align-items-start mb-2">
+                            <span class="step-number me-2">3</span>
+                            <span>Xác nhận thanh toán số tiền <strong>{{ order.format_total() }}</strong></span>
+                        </div>
+                        <div class="d-flex align-items-start">
+                            <span class="step-number me-2">4</span>
+                            <span>Nhấn <strong>"Tôi đã thanh toán"</strong> bên dưới sau khi hoàn tất</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Countdown Timer -->
+                <div class="text-center mt-4 p-3 rounded" style="background: #fff8e1;">
+                    <p class="text-muted mb-1"><i class="bi bi-clock"></i> Vui lòng thanh toán trong</p>
+                    <div class="payment-timer" id="countdown">15:00</div>
+                    <small class="text-muted">Đơn hàng sẽ tự động hủy nếu không thanh toán</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Summary Sidebar -->
+    <div class="col-lg-4">
+        <div class="card mb-3" style="border: 2px solid var(--coffee-cream, #E8E0D8);">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--coffee-milk, #F5E6D3), var(--coffee-white, #FAF7F2));">
+                <h5 class="mb-0" style="color: var(--coffee-dark, #3E2723);"><i class="bi bi-bag-check"></i> Chi tiết đơn hàng</h5>
+            </div>
+            <div class="card-body">
+                {% for item in order.items %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span>{{ item.product.name }} x{{ item.quantity }}</span>
+                    <strong>{{ item.format_subtotal() }}</strong>
+                </div>
+                {% endfor %}
+                <hr style="border-color: #E8E0D8;">
+                <div class="d-flex justify-content-between">
+                    <strong style="font-size: 1.1rem;">Tổng cộng:</strong>
+                    <strong class="product-price" style="font-size: 1.3rem;">{{ order.format_total() }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <form method="POST" action="{{ url_for('orders.confirm_payment', id=order.id) }}">
+            <button type="submit" class="btn btn-success w-100 btn-lg mb-2">
+                <i class="bi bi-check-circle-fill"></i> Tôi đã thanh toán
+            </button>
+        </form>
+        <a href="{{ url_for('orders.detail', id=order.id) }}" class="btn btn-outline-secondary w-100">
+            <i class="bi bi-arrow-left"></i> Quay lại đơn hàng
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Countdown timer (15 minutes)
+    let timeLeft = 15 * 60;
+    const countdownEl = document.getElementById('countdown');
+    
+    const timer = setInterval(() => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        countdownEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        if (timeLeft <= 60) {
+            countdownEl.style.color = '#dc3545';
+        }
+        
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            countdownEl.textContent = 'Hết thời gian!';
+            countdownEl.style.color = '#dc3545';
+        }
+        timeLeft--;
+    }, 1000);
+    
+    // Copy to clipboard
+    function copyText(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            // Show a small tooltip
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed top-0 end-0 m-3 p-2 px-3 bg-success text-white rounded shadow';
+            toast.style.zIndex = '9999';
+            toast.innerHTML = '<i class="bi bi-check-circle"></i> Đã sao chép!';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 1500);
+        }).catch(() => {
+            // Fallback
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+        });
+    }
+</script>
+{% endblock %}

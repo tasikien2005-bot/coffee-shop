@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Đơn hàng của tôi{% endblock %}
+
+{% block content %}
+<h2 class="section-title"><i class="bi bi-list-check"></i> Đơn hàng của tôi</h2>
+
+{% if orders %}
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Ngày đặt</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                            <tr>
+                                <td><strong>#{{ order.id }}</strong></td>
+                                <td style="color: var(--text-muted); font-size: 0.85rem;">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td><strong>{{ order.format_total() }}</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if order.status == 'pending' else 'success' if order.status == 'delivered' else 'warning' if order.status == 'processing' else 'info' if order.status == 'shipping' else 'danger' }}">
+                                        {{ order.get_status_display() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('orders.detail', id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Chi tiết
+                                    </a>
+                                    {% if order.can_cancel() %}
+                                        <form method="POST" action="{{ url_for('orders.cancel', id=order.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc muốn hủy?')">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    {% if pagination.pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                    <li class="page-item"><a class="page-link" href="{{ url_for('orders.index', page=pagination.prev_num) }}"><i class="bi bi-chevron-left"></i></a></li>
+                {% endif %}
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('orders.index', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                {% if pagination.has_next %}
+                    <li class="page-item"><a class="page-link" href="{{ url_for('orders.index', page=pagination.next_num) }}"><i class="bi bi-chevron-right"></i></a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="empty-state">
+        <i class="bi bi-inbox"></i>
+        <h4>Chưa có đơn hàng nào</h4>
+        <p class="text-muted">Chọn vài món cà phê rồi đặt hàng thử xem</p>
+        <a href="{{ url_for('products.index') }}" class="btn btn-primary btn-lg mt-2">
+            <i class="bi bi-shop"></i> Xem sản phẩm
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

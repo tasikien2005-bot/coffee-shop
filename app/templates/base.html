@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Brewly - Qu&#7843;n l&#253; & B&#225;n c&#224; ph&#234;{% endblock %}</title>
+    <!-- Favicon (data URI = luôn hiển thị, không phụ thuộc đường dẫn file) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%3E%3Ccircle cx='16' cy='16' r='15' fill='%238B6914'/%3E%3Cpath d='M10 10h4v2c0 3.3 2.7 6 6 6s6-2.7 6-6v-2h2v2c0 4.4-3.6 8-8 8s-8-3.6-8-8v-2h-4z' fill='%23fff'/%3E%3Cpath d='M10 20v2h12v-2H10z' fill='%23fff'/%3E%3Cellipse cx='16' cy='10' rx='6' ry='2' fill='%23C8965D'/%3E%3C/svg%3E">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml" sizes="any">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg sticky-top cs-navbar" id="mainNavbar">
+        <div class="container">
+            <!-- Brand -->
+            <a class="navbar-brand cs-brand" href="{{ url_for('dashboard.index') }}">
+                <span class="cs-brand-icon">
+                    <i class="bi bi-cup-hot-fill"></i>
+                </span>
+                <span class="cs-brand-text">
+                    <span class="cs-brand-name">Brewly</span>
+                    <span class="cs-brand-tagline">Coffee & Stories</span>
+                </span>
+            </a>
+
+            <!-- Mobile Toggle -->
+            <div class="d-flex align-items-center d-lg-none gap-2">
+                {% if current_user.is_authenticated and not current_user.can_manage_orders() %}
+                <a class="cs-cart-mobile" href="{{ url_for('products.cart') }}">
+                    <i class="bi bi-cart3"></i>
+                    {% if session.get('cart') %}
+                        <span class="cs-cart-badge">{{ session.cart|length }}</span>
+                    {% endif %}
+                </a>
+                <a class="cs-cart-mobile" href="{{ url_for('notifications.index') }}">
+                    <i class="bi bi-envelope"></i>
+                    {% if unread_notification_count %}
+                        <span class="cs-cart-badge">{{ unread_notification_count }}</span>
+                    {% endif %}
+                </a>
+                {% endif %}
+                <button class="navbar-toggler cs-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="cs-toggler-line"></span>
+                    <span class="cs-toggler-line"></span>
+                    <span class="cs-toggler-line"></span>
+                </button>
+            </div>
+
+            <!-- Navbar Content -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Main Navigation -->
+                <ul class="navbar-nav me-auto cs-nav-main">
+                    <li class="nav-item">
+                        <a class="nav-link cs-nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}" href="{{ url_for('dashboard.index') }}">
+                            <i class="bi bi-house"></i>
+                            <span>Trang chủ</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link cs-nav-link {% if request.endpoint == 'dashboard.about' %}active{% endif %}" href="{{ url_for('dashboard.about') }}">
+                            <i class="bi bi-info-circle"></i>
+                            <span>Giới thiệu</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link cs-nav-link {% if request.endpoint == 'products.index' or request.endpoint == 'products.detail' %}active{% endif %}" href="{{ url_for('products.index') }}">
+                            <i class="bi bi-shop"></i>
+                            <span>Sản phẩm</span>
+                        </a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.can_manage_orders() %}
+                            <!-- Admin Navigation -->
+                            <li class="nav-item cs-nav-divider d-none d-lg-flex"></li>
+                            <li class="nav-item">
+                                <a class="nav-link cs-nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}">
+                                    <i class="bi bi-speedometer2"></i>
+                                    <span>Dashboard</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link cs-nav-link {% if request.endpoint == 'admin.products' or request.endpoint == 'admin.product_form' %}active{% endif %}" href="{{ url_for('admin.products') }}">
+                                    <i class="bi bi-box-seam"></i>
+                                    <span>Quản lý SP</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link cs-nav-link {% if request.endpoint and 'admin.order' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.orders') }}">
+                                    <i class="bi bi-receipt"></i>
+                                    <span>Đơn hàng</span>
+                                </a>
+                            </li>
+                            {% if current_user.can_manage_users() %}
+                            <li class="nav-item">
+                                <a class="nav-link cs-nav-link {% if request.endpoint == 'admin.users' %}active{% endif %}" href="{{ url_for('admin.users') }}">
+                                    <i class="bi bi-people"></i>
+                                    <span>Người dùng</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link cs-nav-link {% if request.endpoint == 'admin.activity_log' %}active{% endif %}" href="{{ url_for('admin.activity_log') }}">
+                                    <i class="bi bi-journal-text"></i>
+                                    <span>Nhật ký</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                            <!-- Customer Navigation -->
+                            <li class="nav-item">
+                                <a class="nav-link cs-nav-link cs-nav-cart d-none d-lg-flex {% if request.endpoint == 'products.cart' %}active{% endif %}" href="{{ url_for('products.cart') }}">
+                                    <i class="bi bi-cart3"></i>
+                                    <span>Giỏ hàng</span>
+                                    {% if session.get('cart') %}
+                                        <span class="cs-cart-badge">{{ session.cart|length }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link cs-nav-link {% if request.endpoint and 'orders' in request.endpoint %}active{% endif %}" href="{{ url_for('orders.index') }}">
+                                    <i class="bi bi-list-check"></i>
+                                    <span>Đơn của tôi</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link cs-nav-link {% if request.endpoint and 'notifications' in request.endpoint %}active{% endif %}" href="{{ url_for('notifications.index') }}">
+                                    <i class="bi bi-envelope"></i>
+                                    <span>Thư</span>
+                                    {% if unread_notification_count %}
+                                        <span class="cs-cart-badge ms-1">{{ unread_notification_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+
+                <!-- Right Side Navigation -->
+                <ul class="navbar-nav cs-nav-right">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item dropdown cs-user-dropdown">
+                            <a class="nav-link dropdown-toggle cs-user-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="cs-avatar">
+                                    <i class="bi bi-person-fill"></i>
+                                </span>
+                                <span class="cs-user-info">
+                                    <span class="cs-user-name">{{ current_user.username }}</span>
+                                    <span class="cs-user-role">
+                                        {% if current_user.can_manage_users() %}Admin
+                                        {% elif current_user.can_manage_orders() %}Quản lý
+                                        {% else %}Khách hàng{% endif %}
+                                    </span>
+                                </span>
+                                <i class="bi bi-chevron-down cs-chevron"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end cs-dropdown-menu">
+                                <li class="cs-dropdown-header">
+                                    <span class="cs-avatar cs-avatar-lg">
+                                        <i class="bi bi-person-fill"></i>
+                                    </span>
+                                    <div>
+                                        <strong>{{ current_user.username }}</strong>
+                                        <small>{{ current_user.email }}</small>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item cs-dropdown-item" href="{{ url_for('dashboard.dashboard') }}">
+                                        <i class="bi bi-person-gear"></i> Thông tin cá nhân
+                                    </a>
+                                </li>
+                                {% if not current_user.can_manage_orders() %}
+                                <li>
+                                    <a class="dropdown-item cs-dropdown-item" href="{{ url_for('orders.index') }}">
+                                        <i class="bi bi-bag-check"></i> Đơn hàng của tôi
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item cs-dropdown-item cs-dropdown-logout" href="{{ url_for('auth.logout') }}">
+                                        <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item cs-auth-buttons">
+                            <a class="cs-btn-login" href="{{ url_for('auth.login') }}">
+                                <i class="bi bi-box-arrow-in-right"></i>
+                                <span>Đăng nhập</span>
+                            </a>
+                            <a class="cs-btn-register" href="{{ url_for('auth.register') }}">
+                                <i class="bi bi-person-plus-fill"></i>
+                                <span>Đăng ký</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show fade-in-up" role="alert">
+                        <i class="bi bi-{{ 'exclamation-triangle' if category == 'error' or category == 'danger' else 'check-circle' if category == 'success' else 'info-circle' }}"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="container my-4 fade-in-up">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4">
+        <div class="container text-center">
+            <p class="mb-1">
+                <i class="bi bi-cup-hot-fill" style="color: #C8965D;"></i>
+                <strong style="color: rgba(255,255,255,0.8);">Brewly</strong>
+                <span style="color: rgba(255,255,255,0.5); margin-left: 0.5rem;">Coffee & Stories</span>
+            </p>
+            <p class="mb-0" style="color: rgba(255,255,255,0.5);">© 2026 Brewly. Mua cà phê online dễ dàng, giao tận nơi.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js for admin dashboard -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Nhật ký hoạt động{% endblock %}
+
+{% block content %}
+<h2 class="section-title"><i class="bi bi-journal-text"></i> Nhật ký hoạt động</h2>
+
+<div class="card filter-card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin.activity_log') }}" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Nhân viên</label>
+                <select class="form-select" name="user_id">
+                    <option value="">Tất cả</option>
+                    {% for u in staff_users %}
+                        <option value="{{ u.id }}" {% if user_filter == u.id %}selected{% endif %}>{{ u.username }} ({{ u.role.name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Lọc</button>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('admin.activity_log') }}" class="btn btn-outline-secondary w-100"><i class="bi bi-arrow-clockwise"></i> Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% set action_icons = {
+    'create_product': 'plus-circle text-success',
+    'update_product': 'pencil text-primary',
+    'delete_product': 'trash text-danger',
+    'update_order': 'arrow-repeat text-info',
+    'update_payment': 'credit-card text-warning',
+    'change_role': 'shield-lock text-primary',
+    'toggle_user': 'lock text-secondary',
+    'create_user': 'person-plus text-success'
+} %}
+
+<div class="card">
+    <div class="card-body p-0">
+        {% if logs %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 160px;">Thời gian</th>
+                        <th style="width: 130px;">Người thực hiện</th>
+                        <th style="width: 160px;">Hành động</th>
+                        <th>Chi tiết</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td class="text-muted" style="font-size: 0.85rem;">{{ log.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td><strong>{{ log.user.username }}</strong></td>
+                        <td>
+                            <i class="bi bi-{{ action_icons.get(log.action, 'activity') }}"></i>
+                            {{ log.get_action_label() }}
+                        </td>
+                        <td class="text-muted">{{ log.description }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-4 text-center">
+            <i class="bi bi-journal text-muted" style="font-size: 2rem;"></i>
+            <p class="text-muted mt-2 mb-0">Chưa có hoạt động nào được ghi nhận.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if pagination.pages > 1 %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if pagination.has_prev %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('admin.activity_log', page=pagination.prev_num, user_id=user_filter) }}"><i class="bi bi-chevron-left"></i></a></li>
+        {% endif %}
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == pagination.page %}active{% endif %}"><a class="page-link" href="{{ url_for('admin.activity_log', page=page_num, user_id=user_filter) }}">{{ page_num }}</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        {% if pagination.has_next %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('admin.activity_log', page=pagination.next_num, user_id=user_filter) }}"><i class="bi bi-chevron-right"></i></a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: coffee_shop_web
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=wsgi.py
+      - DATABASE_URL=mysql+pymysql://rikai:Admin%40123@db:3306/coffee_shop?charset=utf8mb4
+      - SECRET_KEY=${SECRET_KEY:-super-secret-key-change-me-in-production-2026}
+      - DB_HOST=db
+      - DB_PORT=3306
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+      - ./config.py:/app/config.py
+      - ./wsgi.py:/app/wsgi.py
+      - upload_data:/app/app/static/images/products
+    restart: unless-stopped
+    networks:
+      - coffee_network
+
+  db:
+    image: mysql:8.0
+    container_name: coffee_shop_db
+    environment:
+      MYSQL_DATABASE: coffee_shop
+      MYSQL_USER: rikai
+      MYSQL_PASSWORD: Admin@123
+      MYSQL_ROOT_PASSWORD: Admin@123
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pAdmin@123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
+    networks:
+      - coffee_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: coffee_shop_phpmyadmin
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: rikai
+      PMA_PASSWORD: Admin@123
+      UPLOAD_LIMIT: 50M
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - coffee_network
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: coffee_shop_tunnel
+    command: tunnel --no-autoupdate run --token eyJhIjoiMWQwYjljNTFmOGZmNjJiMjY1ODM2N2Q0ZDY2MjNhNmIiLCJ0IjoiMDBkYzIwYzgtZDdlZC00YmYyLWFlNTMtNWQ3YjQ4MzRlMTU4IiwicyI6IllURTFPRE0wWVRVdFl6RXlZaTAwWTJVNExUa3pOR010WkRneU16VmxNRGs1WVdZMCJ9
+    depends_on:
+      - web
+    restart: unless-stopped
+    network_mode: host
+
+volumes:
+  db_data:
+    driver: local
+  upload_data:
+    driver: local
+
+networks:
+  coffee_network:
+    driver: bridge

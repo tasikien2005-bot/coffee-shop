@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="section-title"><i class="bi bi-speedometer2"></i> Dashboard</h2>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card stat-products">
+            <h5><i class="bi bi-box-seam"></i> Sản phẩm</h5>
+            <h2>{{ total_products }}</h2>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card stat-orders">
+            <h5><i class="bi bi-receipt"></i> Đơn hàng</h5>
+            <h2>{{ total_orders }}</h2>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card stat-users">
+            <h5><i class="bi bi-people"></i> Người dùng</h5>
+            <h2>{{ total_users }}</h2>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card stat-revenue">
+            <h5><i class="bi bi-currency-dollar"></i> Doanh thu</h5>
+            <h2>{{ total_revenue|format_currency }}</h2>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Recent Orders -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Đơn hàng gần đây</h5>
+                <a href="{{ url_for('admin.orders') }}" class="btn btn-outline-primary btn-sm">Xem tất cả</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Mã đơn</th>
+                                <th>Khách hàng</th>
+                                <th>Tổng tiền</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày đặt</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                                <tr>
+                                    <td><strong>#{{ order.id }}</strong></td>
+                                    <td>{{ order.user.username }}</td>
+                                    <td>{{ order.format_total() }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'primary' if order.status == 'pending' else 'success' if order.status == 'delivered' else 'warning' if order.status == 'processing' else 'info' if order.status == 'shipping' else 'danger' }}">
+                                            {{ order.get_status_display() }}
+                                        </span>
+                                    </td>
+                                    <td style="color: var(--text-muted); font-size: 0.85rem;">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('admin.order_detail', id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Low Stock Products -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #fff3cd, #ffeeba); border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                <h5 class="mb-0" style="color: #856404;"><i class="bi bi-exclamation-triangle"></i> Sắp hết hàng</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if low_stock_products %}
+                    <ul class="list-group list-group-flush">
+                        {% for product in low_stock_products %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>{{ product.name }}</span>
+                                <span class="badge bg-danger">{{ product.stock }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="p-4 text-center">
+                        <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">Tất cả sản phẩm đều đầy đủ</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-journal-text"></i> Hoạt động gần đây</h5>
+                <a href="{{ url_for('admin.activity_log') }}" class="btn btn-outline-primary btn-sm">Xem tất cả</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_activity %}
+                <ul class="list-group list-group-flush">
+                    {% set action_icons = {
+                        'create_product': 'plus-circle text-success',
+                        'update_product': 'pencil text-primary',
+                        'delete_product': 'trash text-danger',
+                        'update_order': 'arrow-repeat text-info',
+                        'update_payment': 'credit-card text-warning',
+                        'change_role': 'shield-lock text-primary',
+                        'toggle_user': 'lock text-secondary',
+                        'create_user': 'person-plus text-success'
+                    } %}
+                    {% for log in recent_activity %}
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div>
+                            <i class="bi bi-{{ action_icons.get(log.action, 'activity') }}"></i>
+                            <strong>{{ log.user.username }}</strong> — {{ log.description }}
+                        </div>
+                        <small class="text-muted text-nowrap ms-2">{{ log.created_at.strftime('%d/%m %H:%M') }}</small>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="p-3 text-center text-muted">Chưa có hoạt động nào.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-4 mt-2">
+    <div class="col-md-6">
+        <div class="card chart-card" style="height: 360px;">
+            <div class="card-header">
+                <h5 class="mb-0">Đơn hàng theo trạng thái</h5>
+            </div>
+            <div class="card-body d-flex justify-content-center align-items-center p-2">
+                <canvas id="ordersByStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card chart-card" style="height: 360px;">
+            <div class="card-header">
+                <h5 class="mb-0">Doanh thu 7 ngày qua</h5>
+            </div>
+            <div class="card-body p-2">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const chartColors = {
+        brown: '#6F4E37',
+        gold: '#C8965D',
+        green: '#4A7C59',
+        blue: '#667eea',
+        red: '#C0392B',
+        cream: '#D4A574'
+    };
+
+    const statusMap = {
+        'pending': 'Chờ xử lý', 'confirmed': 'Đã xác nhận',
+        'processing': 'Đang xử lý', 'shipping': 'Đang giao',
+        'delivered': 'Đã giao', 'cancelled': 'Đã hủy'
+    };
+
+    const ordersByStatusData = {{ orders_by_status | tojson }};
+    if (ordersByStatusData.length > 0) {
+        new Chart(document.getElementById('ordersByStatusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ordersByStatusData.map(i => statusMap[i.status] || i.status),
+                datasets: [{
+                    data: ordersByStatusData.map(i => i.count),
+                    backgroundColor: [chartColors.blue, chartColors.green, chartColors.gold, chartColors.cream, chartColors.brown, chartColors.red],
+                    borderWidth: 0,
+                    hoverOffset: 8
+                }]
+            },
+            options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 12 } } } } }
+        });
+    }
+
+    const revenueData = {{ revenue_by_day | tojson }};
+    if (revenueData.length > 0) {
+        new Chart(document.getElementById('revenueChart'), {
+            type: 'line',
+            data: {
+                labels: revenueData.map(i => new Date(i.date).toLocaleDateString('vi-VN')),
+                datasets: [{
+                    label: 'Doanh thu (đ)',
+                    data: revenueData.map(i => parseFloat(i.revenue) || 0),
+                    borderColor: chartColors.brown,
+                    backgroundColor: 'rgba(111, 78, 55, 0.08)',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: chartColors.gold,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5
+                }]
+            },
+            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+        });
+    }
+</script>
+{% endblock %}

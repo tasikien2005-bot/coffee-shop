@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Chi tiết đơn hàng #{{ order.id }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb" style="font-size: 0.9rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.orders') }}"><i class="bi bi-receipt"></i> Đơn hàng</a></li>
+        <li class="breadcrumb-item active">Đơn #{{ order.id }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="section-title mb-0" style="padding-bottom: 0;"><i class="bi bi-receipt"></i> Đơn hàng #{{ order.id }}</h2>
+    <a href="{{ url_for('admin.orders') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Quay lại
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Chi tiết sản phẩm</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th>Giá</th>
+                                <th>Số lượng</th>
+                                <th>Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items %}
+                                <tr>
+                                    <td><strong>{{ item.product.name }}</strong></td>
+                                    <td>{{ item.price|format_currency }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td><strong>{{ item.format_subtotal() }}</strong></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: var(--coffee-white);">
+                                <th colspan="3" class="text-end" style="font-size: 1.1rem;">Tổng cộng:</th>
+                                <th class="product-price" style="font-size: 1.2rem;">{{ order.format_total() }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Thông tin</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Khách hàng:</strong><br>{{ order.user.username }} ({{ order.user.email }})</p>
+                <p class="mb-2"><strong>Trạng thái:</strong></p>
+                <p>
+                    <span class="badge bg-{{ 'primary' if order.status == 'pending' else 'success' if order.status == 'delivered' else 'warning' if order.status == 'processing' else 'info' if order.status == 'shipping' else 'danger' }}" style="font-size: 0.9rem;">
+                        {{ order.get_status_display() }}
+                    </span>
+                </p>
+                <p><strong>Ngày đặt:</strong><br><span class="text-muted">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</span></p>
+                
+                <!-- Payment Info -->
+                <p><strong>Thanh toán:</strong><br>
+                    <span class="text-muted">{{ order.get_payment_method_display() }}</span>
+                </p>
+                <p><strong>TT thanh toán:</strong><br>
+                    {% if order.payment_status == 'paid' %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> {{ order.get_payment_status_display() }}</span>
+                    {% elif order.payment_status == 'failed' %}
+                        <span class="badge bg-danger"><i class="bi bi-x-circle"></i> {{ order.get_payment_status_display() }}</span>
+                    {% elif order.payment_status == 'refunded' %}
+                        <span class="badge bg-info"><i class="bi bi-arrow-counterclockwise"></i> {{ order.get_payment_status_display() }}</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> {{ order.get_payment_status_display() }}</span>
+                    {% endif %}
+                </p>
+
+                {% if order.processor %}
+                    <p><strong>Người xử lý:</strong><br>
+                        <span class="badge bg-info">{{ order.processor.username }}</span>
+                    </p>
+                {% endif %}
+                {% if order.shipping_address %}
+                    <p><strong>Địa chỉ:</strong><br><span class="text-muted">{{ order.shipping_address }}</span></p>
+                {% endif %}
+                {% if order.notes %}
+                    <p><strong>Ghi chú:</strong><br><span class="text-muted">{{ order.notes }}</span></p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Payment Status Update -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-credit-card"></i> Cập nhật thanh toán</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.update_payment_status', id=order.id) }}">
+                    <select class="form-select mb-3" name="payment_status" required>
+                        <option value="unpaid" {% if order.payment_status == 'unpaid' %}selected{% endif %}>Chưa thanh toán</option>
+                        <option value="paid" {% if order.payment_status == 'paid' %}selected{% endif %}>Đã thanh toán</option>
+                        <option value="failed" {% if order.payment_status == 'failed' %}selected{% endif %}>Thanh toán thất bại</option>
+                        <option value="refunded" {% if order.payment_status == 'refunded' %}selected{% endif %}>Đã hoàn tiền</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-circle"></i> Cập nhật TT
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-arrow-repeat"></i> Cập nhật trạng thái</h5>
+            </div>
+            <div class="card-body">
+                {% set valid_statuses = order.get_valid_transitions() %}
+                {% set status_labels = {
+                    'pending': 'Chờ xử lý',
+                    'confirmed': 'Đã xác nhận',
+                    'processing': 'Đang xử lý',
+                    'shipping': 'Đang giao',
+                    'delivered': 'Đã giao',
+                    'cancelled': 'Đã hủy'
+                } %}
+                {% if valid_statuses %}
+                <form method="POST" action="{{ url_for('admin.update_order_status', id=order.id) }}">
+                    <select class="form-select mb-3" name="status" required>
+                        {% for status in valid_statuses %}
+                            <option value="{{ status }}">{{ status_labels[status] }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-circle"></i> Cập nhật
+                    </button>
+                </form>
+                {% else %}
+                <p class="text-muted mb-0">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    Đơn hàng đã ở trạng thái cuối, không thể cập nhật thêm.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý người dùng{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+    <h2 class="section-title mb-0" style="padding-bottom:0;"><i class="bi bi-people"></i> Quản lý người dùng</h2>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+        <i class="bi bi-person-plus"></i> Thêm nhân viên
+    </button>
+</div>
+
+<!-- Filters -->
+<div class="card filter-card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin.users') }}" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Tìm kiếm</label>
+                <input type="text" class="form-control" name="search" value="{{ search }}" placeholder="Tên hoặc email...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Vai trò</label>
+                <select class="form-select" name="role">
+                    <option value="">Tất cả</option>
+                    {% for role in roles %}
+                        <option value="{{ role.id }}" {% if role_id == role.id %}selected{% endif %}>{{ role.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Tìm</button>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary w-100"><i class="bi bi-arrow-clockwise"></i> Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên đăng nhập</th>
+                        <th>Email</th>
+                        <th>Họ tên</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th class="text-center">Đơn xử lý</th>
+                        <th class="text-center">Hoạt động</th>
+                        <th>Ngày tạo</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set role_labels = {'admin': 'Admin', 'manager': 'Quản lý', 'staff': 'Nhân viên', 'customer': 'Khách hàng'} %}
+                    {% for user in users %}
+                        <tr>
+                            <td style="color: var(--text-muted);">{{ user.id }}</td>
+                            <td><strong>{{ user.username }}</strong></td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.full_name or '-' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'danger' if user.is_admin() else 'warning' if user.is_manager() else 'info' if user.is_staff() else 'secondary' }}">
+                                    {{ role_labels.get(user.role.name, user.role.name) }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if user.is_active %}
+                                    <span class="badge bg-success">Hoạt động</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Khóa</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if not user.is_customer() %}
+                                    {% set oc = orders_processed.get(user.id, 0) %}
+                                    {% if oc %}<span class="badge bg-info">{{ oc }}</span>{% else %}<span class="text-muted">0</span>{% endif %}
+                                {% else %}—{% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if not user.is_customer() %}
+                                    {% set ac = actions_count.get(user.id, 0) %}
+                                    {% if ac %}<span class="badge bg-secondary">{{ ac }}</span>{% else %}<span class="text-muted">0</span>{% endif %}
+                                {% else %}—{% endif %}
+                            </td>
+                            <td style="color: var(--text-muted); font-size: 0.85rem;">{{ user.created_at.strftime('%d/%m/%Y') }}</td>
+                            <td class="text-center">
+                                {% if user.id != current_user.id %}
+                                <div class="d-flex gap-1 justify-content-center flex-wrap">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#roleModal{{ user.id }}" title="Đổi vai trò">
+                                        <i class="bi bi-shield-lock"></i>
+                                    </button>
+                                    <form method="POST" action="{{ url_for('admin.toggle_user_active', user_id=user.id) }}" class="d-inline" onsubmit="return confirm('{{ 'Mở khóa' if not user.is_active else 'Khóa' }} tài khoản {{ user.username }}?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-{{ 'success' if not user.is_active else 'danger' }}" title="{{ 'Mở khóa' if not user.is_active else 'Khóa' }} tài khoản">
+                                            <i class="bi bi-{{ 'unlock' if not user.is_active else 'lock' }}"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                {% else %}
+                                <span class="text-muted small">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Role change modals -->
+{% for user in users %}
+{% if user.id != current_user.id %}
+<div class="modal fade" id="roleModal{{ user.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('admin.update_user_role', user_id=user.id) }}">
+                <div class="modal-header">
+                    <h6 class="modal-title"><i class="bi bi-shield-lock"></i> Phân quyền</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Người dùng: <strong>{{ user.username }}</strong></p>
+                    <label class="form-label">Vai trò mới</label>
+                    <select name="role_id" class="form-select">
+                        {% for role in roles %}
+                            <option value="{{ role.id }}" {% if role.id == user.role_id %}selected{% endif %}>
+                                {{ role_labels.get(role.name, role.name) }}
+                                {% if role.description %} — {{ role.description }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-check-lg"></i> Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% if pagination.pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if pagination.has_prev %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('admin.users', page=pagination.prev_num, search=search, role=role_id) }}"><i class="bi bi-chevron-left"></i></a></li>
+            {% endif %}
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    <li class="page-item {% if page_num == pagination.page %}active{% endif %}"><a class="page-link" href="{{ url_for('admin.users', page=page_num, search=search, role=role_id) }}">{{ page_num }}</a></li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('admin.users', page=pagination.next_num, search=search, role=role_id) }}"><i class="bi bi-chevron-right"></i></a></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+
+<!-- Create User Modal -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('admin.create_user') }}">
+                <div class="modal-header">
+                    <h6 class="modal-title"><i class="bi bi-person-plus"></i> Thêm nhân viên</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email <span class="text-danger">*</span></label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                        <input type="password" name="password" class="form-control" required minlength="6">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Họ tên</label>
+                        <input type="text" name="full_name" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Vai trò <span class="text-danger">*</span></label>
+                        <select name="role_id" class="form-select" required>
+                            {% for role in roles %}
+                                {% if role.name != 'customer' and (role.name != 'admin' or current_user.is_admin()) %}
+                                <option value="{{ role.id }}">
+                                    {{ role_labels.get(role.name, role.name) }}
+                                    {% if role.description %} — {{ role.description }}{% endif %}
+                                </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Tạo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

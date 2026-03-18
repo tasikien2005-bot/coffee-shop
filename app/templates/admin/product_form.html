@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Chỉnh sửa' if product else 'Thêm mới' }} sản phẩm{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb" style="font-size: 0.9rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.products') }}"><i class="bi bi-box-seam"></i> Sản phẩm</a></li>
+        <li class="breadcrumb-item active">{{ 'Chỉnh sửa' if product else 'Thêm mới' }}</li>
+    </ol>
+</nav>
+
+<h2 class="section-title">
+    <i class="bi bi-{{ 'pencil' if product else 'plus-circle' }}"></i>
+    {{ 'Chỉnh sửa' if product else 'Thêm mới' }} sản phẩm
+</h2>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data" action="{{ url_for('admin.edit_product', id=product.id) if product else url_for('admin.create_product') }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ product.name if product else '' }}" placeholder="Nhập tên sản phẩm" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Mô tả</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" placeholder="Mô tả sản phẩm...">{{ product.description if product else '' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Hình ảnh</label>
+                        {% if product and product.display_image_url %}
+                            <div class="mb-2">
+                                <img src="{{ url_for('static', filename=product.display_image_url) }}" alt="{{ product.name }}" class="img-thumbnail" style="max-width: 220px; height: auto;">
+                            </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="image" name="image" accept=".png,.jpg,.jpeg,.gif,image/*">
+                        <div class="form-text">Chấp nhận: png, jpg, jpeg, gif. Để khách hiểu rõ sản phẩm (đặc biệt cà phê hộp), hãy tải ảnh thật của sản phẩm.</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="price" class="form-label">Giá (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="price" name="price" value="{{ product.price if product else '' }}" step="0.01" min="0" placeholder="0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="stock" class="form-label">Tồn kho</label>
+                            <input type="number" class="form-control" id="stock" name="stock" value="{{ product.stock if product else 0 }}" min="0" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category_id" class="form-label">Danh mục <span class="text-danger">*</span></label>
+                        <select class="form-select" id="category_id" name="category_id" required>
+                            <option value="">-- Chọn danh mục --</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}" {% if product and product.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% if product %}
+                        <div class="mb-4 form-check">
+                            <input type="checkbox" class="form-check-input" id="is_active" name="is_active" {% if product.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">Sản phẩm đang hoạt động</label>
+                        </div>
+                    {% endif %}
+                    <hr style="border-color: #E8E0D8;">
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{{ url_for('admin.products') }}" class="btn btn-outline-secondary">Hủy</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> {{ 'Cập nhật' if product else 'Tạo mới' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="section-title"><i class="bi bi-speedometer2"></i> Dashboard</h2>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="stat-card stat-orders">
+            <h5><i class="bi bi-receipt"></i> Tổng đơn hàng</h5>
+            <h2>{{ total_orders }}</h2>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card stat-revenue">
+            <h5><i class="bi bi-currency-dollar"></i> Tổng chi tiêu</h5>
+            <h2>{{ total_spent|round(0)|int }} đ</h2>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card stat-users">
+            <h5><i class="bi bi-person"></i> Thông tin</h5>
+            <h2 style="font-size: 1.2rem;">{{ current_user.full_name or current_user.username }}</h2>
+            <p style="margin: 0; font-size: 0.85rem; opacity: 0.8;">{{ current_user.email }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Đơn hàng gần đây</h5>
+        {% if recent_orders %}
+            <a href="{{ url_for('orders.index') }}" class="btn btn-outline-primary btn-sm">Xem tất cả</a>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        {% if recent_orders %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Ngày đặt</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                            <tr>
+                                <td><strong>#{{ order.id }}</strong></td>
+                                <td style="color: var(--text-muted); font-size: 0.85rem;">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>{{ order.format_total() }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if order.status == 'pending' else 'success' if order.status == 'delivered' else 'warning' if order.status == 'processing' else 'info' if order.status == 'shipping' else 'danger' }}">
+                                        {{ order.get_status_display() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('orders.detail', id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Xem
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <h4>Chưa có đơn hàng nào</h4>
+                <a href="{{ url_for('products.index') }}" class="btn btn-primary mt-2">
+                    <i class="bi bi-shop"></i> Mua sắm ngay
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
